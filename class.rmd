@@ -62,6 +62,7 @@ my_data <- tibble(female = c(0,0, 1))
 predict(model, newdata = my_data, type = "response")
 ```
 
+
 ```{r}
 x2 %>%
   mutate(prediction = predict(model, type = "response"))
