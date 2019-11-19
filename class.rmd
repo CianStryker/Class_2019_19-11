@@ -1,0 +1,69 @@
+---
+title: "Class"
+author: "Cian Stryker"
+date: "11/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidymodels)
+library(skimr)
+library(fs)
+library(remotes)
+library(tidyverse)
+```
+
+```{r}
+download.file("https://github.com/TheUpshot/2018-live-poll-results/archive/master.zip", destfile = "master.zip")
+
+unzip("master.zip")
+```
+
+```{r message=FALSE}
+test <- read_csv("2018-live-poll-results-master/data/elections-poll-az02-1.csv")
+
+my_list <- fs::dir_ls("2018-live-poll-results-master/data/")
+
+x <- map_dfr(my_list, read_csv, col_types = cols(
+                                          .default = col_character(),
+                                          turnout_scale = col_double(),
+                                          turnout_score = col_double(),
+                                          w_LV = col_double(),
+                                          w_RV = col_double(),
+                                          final_weight = col_double(),
+                                          timestamp = col_datetime(format = "")
+                                        ), .id = "source") 
+```
+
+```{r}
+
+x2 <- x %>%
+ mutate(dvote = ifelse(response == "Dem", 1, 0)) %>%
+ mutate(female = ifelse(gender == "Female", 1, 0)) %>%
+ select(dvote, female, response, gender)
+
+model <- glm(dvote ~ female, data = x2, family = "binomial")
+ summary(model)
+```
+
+```{r}
+
+ggplot(x2, aes(x = female, y = dvote)) +
+  geom_jitter() +
+  geom_smooth(method = "lm")
+
+my_data <- tibble(female = c(0,0, 1))
+```
+
+```{r}
+
+predict(model, newdata = my_data, type = "response")
+```
+
+```{r}
+x2 %>%
+  mutate(prediction = predict(model, type = "response"))
+```
+
